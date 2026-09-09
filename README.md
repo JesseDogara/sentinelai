@@ -1,7 +1,8 @@
 # SentinelAI
 
 A local security assessment dashboard for learning, inspection and evidence-based
-reporting. Four independent modules keep each assessment's scope understandable.
+reporting. Four assessment modules and a separate local training lab keep each
+workflow's scope understandable.
 
 | Module | What it does | What it does not establish |
 | --- | --- | --- |
@@ -28,9 +29,9 @@ a Windows virtual environment cannot be reused inside WSL or Linux.
 | Windows PowerShell (native) | Available | Not supported by the current DNS backend; use WSL |
 | Windows with WSL Ubuntu | Use the Linux setup below | Install `dnsutils` inside WSL |
 
-Automated platform verification currently runs on macOS only. Linux and Windows
-instructions are documented setup paths; they are not claims of native Windows
-or Linux CI coverage. The DNS implementation currently uses a fixed Unix path.
+The portable Website/API, IP/reporting and local-lab tests run on macOS, Linux and
+Windows in CI. DNS regression tests currently run on macOS only. Native Windows
+DNS remains unsupported: that implementation uses a fixed Unix path.
 
 ### Get the code
 
@@ -174,6 +175,19 @@ with that interpreter. Passing local tests on an older interpreter does not reso
 its TLS compatibility warning. See [Python's virtual-environment documentation](https://docs.python.org/3.12/library/venv.html)
 for the platform-specific directory layout and environment setup.
 
+## Local two-account training lab
+
+Open **Access-control lab** from the dashboard to compare a deliberately broken
+API with its fixed version. SentinelAI creates two temporary accounts, makes eight
+bounded GET requests to its own loopback server, and checks whether Account B can
+read Account A's exact synthetic private record. No target URL or real credentials
+are accepted. The server stops after the run; tokens and response bodies are not
+saved. Results are clearly labeled as synthetic training evidence.
+
+The lab works without `dig` on macOS, Linux and native Windows. Read the
+[step-by-step lesson](docs/access-control-lab.md) for expected results, request
+limits, redaction guarantees and the code to study.
+
 ## Use the dashboard
 
 1. Choose Website, API, Domain or IP Address. Input guidance changes with the type.
@@ -236,7 +250,7 @@ macOS / Linux / WSL (with `/usr/bin/dig` installed):
 Native Windows: run the Website/API, local IP and reporting regression tests:
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest -v test_api test_reporting
+.\.venv\Scripts\python.exe -m unittest -v test_api test_reporting test_access_lab
 ```
 
 The full DNS test suite currently requires the Unix DNS utility to be present,
@@ -253,8 +267,8 @@ check verifies the installed `dig` path and output format when network is availa
 
 See [the Git and GitHub guide](docs/github-workflow.md), [contribution guide](CONTRIBUTING.md),
 and [security notes](SECURITY.md). Scan databases, secrets, reports and virtual
-environments are excluded from version control. Automated tests run on macOS
-with Python 3.12; Dependabot proposes dependency updates monthly.
+environments are excluded from version control. Portable tests run on macOS, Linux
+and Windows with Python 3.12; DNS tests run on macOS; Dependabot proposes dependency updates monthly.
 
 ## Code map
 
@@ -263,6 +277,8 @@ with Python 3.12; Dependabot proposes dependency updates monthly.
 - `api_scanner.py`: bounded API observations.
 - `network_scanner.py`: input validation, bounded DNS, IP metadata.
 - `reporting.py`: original Markdown report generation.
+- `access_lab.py`: ephemeral training API, strict lab request scope and evidence comparison.
+- `docs/access-control-lab.md`: the two-account lesson and its limits.
 - `templates/`, `static/`: dashboard, results, accessible controls and progress.
 - `test_*.py`: regression checks.
 - `docs/learning-journal.md`: milestones and concepts to study.

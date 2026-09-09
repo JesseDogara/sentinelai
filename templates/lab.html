@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SentinelAI — Access-control lab</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><main class="container">
+  <a class="back" href="{{ url_for('index') }}">← Dashboard</a>
+  <section class="hero"><p class="eyebrow">GUIDED LOCAL TRAINING</p><h1>Who can read this record?</h1><p class="subtitle">Learn the difference between being signed in and being allowed access.</p></section>
+  <section class="card"><h2>The experiment</h2>
+    <p>Account A and Account B each own a synthetic private record. Both can sign in, but only the owner should be allowed to read their record.</p>
+    <ol><li>Check that A can read A’s record and B can read B’s record.</li><li>Check that an anonymous request is rejected.</li><li>Ask for A’s record using B’s test credentials.</li><li>Repeat the same checks against the fixed API.</li></ol>
+    <p class="muted">The broken version checks authentication but forgets ownership. The fixed version checks both. A 200 response only confirms the flaw when the exact private record matches and the baseline controls are valid.</p>
+  </section>
+  <section class="card"><h2>Run the comparison</h2>
+    {% with messages = get_flashed_messages() %}{% if messages %}<div class="alert" role="alert">{{ messages[0] }}</div>{% endif %}{% endwith %}
+    <p>SentinelAI starts a temporary server on 127.0.0.1 and stops it when finished. Two random credentials stay in memory. Only status codes and comparison outcomes are saved.</p>
+    <p class="muted">At most 8 GET requests, spaced at least 0.2 seconds apart, with a 20-second request budget. No target URL or real credentials are accepted. One training run at a time.</p>
+    <form id="lab-form" method="post" action="{{ url_for('lab_run') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button id="lab-button" type="submit">Compare broken and fixed APIs</button>
+      <p id="lab-progress" role="status" class="muted" hidden>Running the local comparison… This usually takes a few seconds.</p>
+    </form>
+  </section>
+  <section class="card"><h2>What to learn from the result</h2>
+    <p><strong>Authentication:</strong> Which account made the request? <strong>Authorization:</strong> Is that account allowed to read this record?</p>
+    <p>The broken version should expose A’s exact synthetic record to B. The fixed version should return 403. Unexpected controls, errors, unrelated content or a login page are inconclusive.</p>
+    <p class="muted">This is a controlled lesson, not a live-target vulnerability report. You can reopen or export it from assessment history without running the requests again.</p>
+  </section>
+</main><script src="{{ url_for('static', filename='lab.js') }}" defer></script></body></html>

@@ -10,8 +10,8 @@
 ## Next quality milestones
 
 1. **Runtime and application hardening:** supported Python/OpenSSL, environment
-   configuration, CSRF protection, local origin
-   checks and safer website request/body limits. Validate startup and upgrade paths.
+   configuration, safer website request/body limits. CSRF protection and local origin/host
+   checks are now implemented. Validate startup and upgrade paths.
 2. **Evidence quality:** explicit expected policies per owned asset, contextual
    website scoring, policy comparisons and scan-to-scan differences. Avoid claiming
    a change is a vulnerability without validation.
@@ -32,3 +32,9 @@
 - Tests cover meaningful regressions, not just matching implementation details.
 - Local verification includes input, result, saved history and report downloads.
 - No claims of production readiness or confirmed vulnerabilities without evidence.
+
+## Local access-control learning milestone
+
+Shipped a synthetic, loopback-only two-account lab, evidence comparisons and
+redacted history/reports. External target allowlists and authenticated API sessions
+remain future work; the local lab does not provide those capabilities.

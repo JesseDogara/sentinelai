@@ -1,3 +1,4 @@
+import sqlite3
 import json
 from pathlib import Path
 import tempfile
@@ -5,6 +6,7 @@ import unittest
 from unittest.mock import patch
 
 import app
+from _test_support import csrf_post
 from reporting import markdown_report
 
 
@@ -13,7 +15,7 @@ class ReportingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.object(app, 'DB_PATH', Path(directory)/'scans.db'):
             app.init_db()
             client = app.app.test_client()
-            response = client.post('/scan', data={'scan_type':'ip', 'target':'::1'})
+            response = csrf_post(client, '/scan', data={'scan_type':'ip', 'target':'::1'})
             self.assertEqual(response.status_code, 303)
             self.assertEqual(response.location, '/scans/1')
             for _ in range(2): self.assertEqual(client.get(response.location).status_code, 200)
@@ -21,7 +23,7 @@ class ReportingTests(unittest.TestCase):
             raw = client.get('/scans/1/export/json')
             self.assertEqual(raw.status_code, 200)
             result = json.loads(raw.data)
-            self.assertEqual(result['scanner_version'], '0.3.0')
+            self.assertEqual(result['scanner_version'], app.SCANNER_VERSION)
             self.assertIn('+00:00', result['scanned_at'])
             self.assertGreaterEqual(result['duration_ms'], 0)
             self.assertIn('attachment;', raw.headers['Content-Disposition'])
@@ -34,6 +36,25 @@ class ReportingTests(unittest.TestCase):
             self.assertEqual(len(app.get_history(scan_type='ip', query='::1')), 1)
             self.assertEqual(len(app.get_history(query="' OR 1=1 --")), 0)
             self.assertEqual(client.get('/?type=invalid').status_code, 400)
+
+    def test_database_handles_close_before_request_returns(self):
+        original_connect = sqlite3.connect
+        connections = []
+        def track_connection(*args, **kwargs):
+            conn = original_connect(*args, **kwargs)
+            connections.append(conn)
+            return conn
+        with tempfile.TemporaryDirectory() as directory, patch.object(app, 'DB_PATH', Path(directory)/'scans.db'):
+            with patch('app.sqlite3.connect', side_effect=track_connection):
+                app.init_db()
+                client = app.app.test_client()
+                response = csrf_post(client, '/scan', data={'scan_type':'ip', 'target':'::1'}, follow_redirects=True)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(client.get('/scans/1/export/json').status_code, 200)
+            self.assertTrue(connections)
+            for conn in connections:
+                with self.assertRaises(sqlite3.ProgrammingError):
+                    conn.execute('SELECT 1')
 
     def test_markdown_untrusted_data_stays_quoted(self):
         result={'target':'<img src=x onerror=alert(1)>', 'scan_type':'domain', 'findings':[],

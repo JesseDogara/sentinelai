@@ -1,3 +1,4 @@
+from contextlib import closing
 import json
 import sqlite3
 import tempfile
@@ -7,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
 import app
+from _test_support import csrf_post
 from api_scanner import scan_api, normalize_api_target
 
 class Handler(BaseHTTPRequestHandler):
@@ -55,19 +57,19 @@ class Tests(unittest.TestCase):
     def test_history_migration_and_routes(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(app, 'DB_PATH', Path(directory) / 'history.db'):
-                with sqlite3.connect(app.DB_PATH) as conn:
+                with closing(sqlite3.connect(app.DB_PATH)) as conn, conn:
                     conn.execute('CREATE TABLE scans (id INTEGER PRIMARY KEY AUTOINCREMENT, target TEXT NOT NULL, scanned_at TEXT NOT NULL, score INTEGER NOT NULL, findings_json TEXT NOT NULL)')
                     conn.execute("INSERT INTO scans VALUES (1, 'old', 'yesterday', 80, '[]')")
                 app.init_db(); app.init_db()
                 client = app.app.test_client()
                 self.assertEqual(app.get_history()[0]['scan_type'], 'website')
                 for kind in ('website', 'api'):
-                    response = client.post('/scan', data={'target':self.base, 'scan_type':kind}, follow_redirects=True)
+                    response = csrf_post(client, '/scan', data={'target':self.base, 'scan_type':kind}, follow_redirects=True)
                     self.assertEqual(response.status_code, 200)
                     self.assertEqual(app.get_history()[0]['scan_type'], kind)
                     self.assertEqual(client.get('/scans/' + str(app.get_history()[0]['id'])).status_code, 200)
                 self.assertIn(b'Observations', client.get('/').data)
-                self.assertEqual(client.post('/scan', data={'target':self.base,'scan_type':'other'}).status_code, 302)
+                self.assertEqual(csrf_post(client, '/scan', data={'target':self.base,'scan_type':'other'}).status_code, 302)
                 self.assertEqual(len(app.get_history()), 3)
 
 if __name__ == '__main__': unittest.main()
