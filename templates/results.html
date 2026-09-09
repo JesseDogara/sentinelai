@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SentinelAI Results</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <a class="back" href="{{ url_for('index') }}">← New scan</a>
+
+    <nav class="report-actions" aria-label="Export assessment">
+      <a href="{{ url_for('export_scan', scan_id=scan_id, format_name='md') }}">Download report</a>
+      <a href="{{ url_for('export_scan', scan_id=scan_id, format_name='json') }}">Download evidence (JSON)</a>
+    </nav>
+    {% set scan_type = result.get("scan_type", "website") %}
+    {% set scan_label = scan_labels.get(scan_type, scan_type) %}
+    <section class="hero">
+      <p class="eyebrow">{{ scan_label | upper }} ASSESSMENT RESULTS</p>
+      <h1>{{ (scan_label ~ " observations") if scan_type != "website" else (result["score"] ~ "/100") }}</h1>
+      <p class="subtitle">{{ result["rating"] }}</p>
+      {% if result.get("scanned_at") %}<p class="muted">Recorded {{ result["scanned_at"] }} · {{ result["duration_ms"] }} ms · Scanner {{ result["scanner_version"] }}</p>{% endif %}
+    </section>
+
+    {% if result.get("summary") %}
+    <section class="card grid">
+      {% for label, value in result["summary"].items() %}
+      <div><span class="label">{{ label }}</span><strong>{{ value }}</strong></div>
+      {% endfor %}
+    </section>
+    {% else %}
+    <section class="card grid">
+      <div>
+        <span class="label">Requested target</span>
+        <strong>{{ result["target"] }}</strong>
+      </div>
+      <div>
+        <span class="label">Final URL</span>
+        <strong>{{ result["final_url"] }}</strong>
+      </div>
+      <div>
+        <span class="label">HTTP status</span>
+        <strong>{{ result["status_code"] }}</strong>
+      </div>
+      <div>
+        <span class="label">{{ "Content type" if result.get("scan_type") == "api" else "Server" }}</span>
+        <strong>{{ result.get("content_type", result["server"]) }}</strong>
+      </div>
+    </section>
+
+    {% endif %}
+    {% if result.get("dns_queries") %}
+    <section class="card"><h2>DNS lookup results</h2>
+      {% for query in result["dns_queries"] %}
+      <article class="dns-query"><h3>{{ query["query_type"] }} <span class="badge">{{ query["status"] }}</span></h3>
+        {% if query["records"] %}
+        <div class="table-scroll"><table><thead><tr><th>Name</th><th>Type</th><th>TTL (seconds)</th><th>Value</th></tr></thead><tbody>
+          {% for record in query["records"] %}<tr><td>{{ record["name"] }}</td><td>{{ record["type"] }}</td><td>{{ record["ttl"] }}</td><td>{{ record["value"] }}</td></tr>{% endfor %}
+        </tbody></table></div>
+        {% else %}<p class="muted">No records available for this query. Review its status above.</p>{% endif %}
+      </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+    {% for group, headers in result.get("header_groups", {}).items() %}
+    <section class="card"><h2>{{ group }}</h2><table><thead><tr><th>Header</th><th>Response value</th></tr></thead><tbody>
+    {% for name, value in headers.items() %}<tr><td>{{ name }}</td><td>{{ value }}</td></tr>{% endfor %}
+    </tbody></table></section>
+    {% endfor %}
+    <section class="card">
+      <h2>{{ "Findings" if scan_type == "website" else "Interpretation and next steps" }}</h2>
+      {% for finding in result["findings"] %}
+        <article class="finding">
+          <div class="finding-top">
+            <h3>{{ finding["name"] }}</h3>
+            <span class="badge">{{ finding["severity"] }}</span>
+          </div>
+          <p><strong>Status:</strong> {{ finding["status"] }}</p>
+          <p>{{ finding["description"] }}</p>
+          <p><strong>{{ "Remediation" if scan_type == "website" else "Next step" }}:</strong> {{ finding["remediation"] }}</p>
+        </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>

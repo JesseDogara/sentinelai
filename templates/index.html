@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SentinelAI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">CYBERSECURITY + AI LEARNING PROJECT</p>
+      <h1>SentinelAI</h1>
+      <p class="subtitle">Understand your websites, APIs, domains and IP addresses.</p>
+    </section>
+
+    <section class="stats" aria-label="Saved assessment counts">
+      {% for value, label in scan_labels.items() %}<div class="stat"><span class="label">{{ label }}</span><strong>{{ counts.get(value, 0) }}</strong><span class="muted"> saved</span></div>{% endfor %}
+    </section>
+    <section class="card">
+      <h2>Start an assessment</h2>
+      <p class="muted">Only scan systems you own or have explicit permission to test.</p>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="alert">{{ messages[0] }}</div>
+        {% endif %}
+      {% endwith %}
+
+      <form action="{{ url_for('scan') }}" method="post">
+        <label for="scan_type">Scan type</label>
+        <select id="scan_type" name="scan_type">
+          {% for value, label in scan_labels.items() %}<option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <p id="scan-help" class="muted" aria-live="polite">Website/API: enter a URL. Domain: enter an exact domain name. IP: enter one IPv4 or IPv6 address.</p>
+        <label id="target-label" for="target">Target</label>
+        <input id="target" name="target" value="{{ target }}" placeholder="https://example.com" aria-describedby="scan-help" autocomplete="off" spellcheck="false" required maxlength="2048">
+        <label id="reverse-option" class="checkbox-row" hidden><input type="checkbox" name="reverse_dns"> Look up reverse DNS (PTR) for this IP</label>
+        <button id="scan-button" type="submit">Run assessment</button>
+        <p id="scan-progress" class="muted" role="status" hidden>Assessment in progress…</p>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Assessment history <span class="badge">{{ total_scans }} saved</span></h2>
+      <form class="history-filter" method="get" action="{{ url_for('index') }}">
+        <div><label for="history-type">Filter by type</label><select id="history-type" name="type"><option value="">All types</option>{% for value, label in scan_labels.items() %}<option value="{{ value }}" {% if filter_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+        <div><label for="history-query">Search targets</label><input id="history-query" name="q" value="{{ query }}" placeholder="Find a saved target" maxlength="200"></div>
+        <button type="submit">Filter history</button><a href="{{ url_for('index') }}">Clear</a>
+      </form>
+      <p class="muted">Showing up to 50 matching assessments, newest first.</p>
+      {% if history %}
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Target</th><th>Result</th><th>Scanned</th></tr>
+          </thead>
+          <tbody>
+            {% for row in history %}
+              <tr>
+                <td>{{ scan_labels.get(row["scan_type"], row["scan_type"]) }}</td><td>{{ row["target"] }} {% if row["result_json"] %}<a href="{{ url_for('scan_detail', scan_id=row['id']) }}">Details</a>{% endif %}</td>
+                <td>{{ "Observations" if row["scan_type"] != "website" else (row["score"] ~ "/100") }}</td>
+                <td>{{ row["scanned_at"] }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">{{ "No matching assessments. Try another filter." if total_scans else "No assessments yet. Choose a scan type to get started." }}</p>
+      {% endif %}
+    </section>
+    <section class="card">
+      <h2>Know what each assessment covers</h2>
+      <p class="muted">Website checks HTTPS and common headers. API observes one unauthenticated GET. Domain reads DNS records for an exact name. IP explains address flags, with an optional reverse-DNS lookup.</p>
+      <p class="muted">Observations are evidence to review, not proof that a system is secure. No exploitation, credential guessing or port sweeps are performed.</p>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+</body>
+</html>
