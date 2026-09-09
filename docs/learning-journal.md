@@ -218,3 +218,25 @@ repository hosting does not deploy the Flask server. Learn status, diff, staging
 commits, branches and pull requests before using force-push or history rewriting.
 The first commit records the current source snapshot; earlier journal entries
 remain learning notes, not reconstructed Git history.
+
+
+## September 9, 2026 — Local two-account API lesson
+
+Added a separate, reproducible lab with broken and fixed ownership checks. Each
+run creates accounts A and B, two synthetic private records, and a temporary
+loopback server. Four control/comparison requests per version establish whether
+B can read A's exact private record. A 200 response alone is never treated as proof.
+
+Introduced lab-specific origin/path allowlists, request and response-size budgets,
+credential isolation in memory, safe exports, server cleanup and a per-process
+single-run lock. Added session-bound CSRF protection to all dashboard POST forms,
+trusted local hosts and cross-origin submission checks. Existing assessment
+modules retain their workflows, with CSRF-aware regression tests.
+
+The test workflow now covers portable behavior on macOS, Linux and Windows, with
+DNS-specific tests remaining on macOS. The lab itself has no Unix DNS dependency.
+
+Study authentication versus authorization first, then control experiments, precise
+evidence comparison, false positives, scope enforcement and secret redaction.
+Follow docs/access-control-lab.md. These lab-only controls are not yet a general
+external API testing or bounty-scope system.

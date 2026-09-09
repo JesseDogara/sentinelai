@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
 import app
+from _test_support import csrf_post
 from api_scanner import scan_api, normalize_api_target
 
 class Handler(BaseHTTPRequestHandler):
@@ -62,12 +63,12 @@ class Tests(unittest.TestCase):
                 client = app.app.test_client()
                 self.assertEqual(app.get_history()[0]['scan_type'], 'website')
                 for kind in ('website', 'api'):
-                    response = client.post('/scan', data={'target':self.base, 'scan_type':kind}, follow_redirects=True)
+                    response = csrf_post(client, '/scan', data={'target':self.base, 'scan_type':kind}, follow_redirects=True)
                     self.assertEqual(response.status_code, 200)
                     self.assertEqual(app.get_history()[0]['scan_type'], kind)
                     self.assertEqual(client.get('/scans/' + str(app.get_history()[0]['id'])).status_code, 200)
                 self.assertIn(b'Observations', client.get('/').data)
-                self.assertEqual(client.post('/scan', data={'target':self.base,'scan_type':'other'}).status_code, 302)
+                self.assertEqual(csrf_post(client, '/scan', data={'target':self.base,'scan_type':'other'}).status_code, 302)
                 self.assertEqual(len(app.get_history()), 3)
 
 if __name__ == '__main__': unittest.main()

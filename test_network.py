@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 import app
+from _test_support import csrf_post
 from network_scanner import normalize_domain, normalize_ip, query_dns, scan_domain, scan_ip
 
 
@@ -84,7 +85,7 @@ class NetworkTests(unittest.TestCase):
             client = app.app.test_client()
             with patch('network_scanner.subprocess.run', return_value=dns_output(records='example.com. 60 IN TXT "<script>alert(1)</script>"')):
                 for scan_type, target in [('domain', 'example.com'), ('ip', '::1')]:
-                    response = client.post('/scan', data={'scan_type':scan_type, 'target':target}, follow_redirects=True)
+                    response = csrf_post(client, '/scan', data={'scan_type':scan_type, 'target':target}, follow_redirects=True)
                     self.assertEqual(response.status_code, 200)
                     self.assertNotIn(b'HTTP status', response.data)
                     self.assertIn(b'observations', response.data)
@@ -97,7 +98,7 @@ class NetworkTests(unittest.TestCase):
                         self.assertIn(b'&lt;script&gt;', detail.data)
                         self.assertNotIn(b'<script>alert', detail.data)
             before = len(app.get_history())
-            response = client.post('/scan', data={'scan_type':'domain', 'target':'https://example.com'})
+            response = csrf_post(client, '/scan', data={'scan_type':'domain', 'target':'https://example.com'})
             self.assertEqual(response.status_code, 400)
             self.assertIn(b'Enter a domain name only', response.data)
             self.assertEqual(len(app.get_history()), before)

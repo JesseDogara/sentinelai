@@ -28,9 +28,10 @@
       {% endwith %}
 
       <form action="{{ url_for('scan') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="scan_type">Scan type</label>
         <select id="scan_type" name="scan_type">
-          {% for value, label in scan_labels.items() %}<option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          {% for value, label in scan_types.items() %}<option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
         <p id="scan-help" class="muted" aria-live="polite">Website/API: enter a URL. Domain: enter an exact domain name. IP: enter one IPv4 or IPv6 address.</p>
         <label id="target-label" for="target">Target</label>
@@ -41,6 +42,12 @@
       </form>
     </section>
 
+    <section class="card">
+      <p class="eyebrow">GUIDED LOCAL TRAINING</p>
+      <h2>Can one account read another account’s private record?</h2>
+      <p class="muted">Compare a deliberately broken API with its fixed version using two temporary accounts and synthetic records. Eight requests, no external target and no real credentials.</p>
+      <a class="button-link" href="{{ url_for('lab_index') }}">Open access-control lab</a>
+    </section>
     <section class="card">
       <h2>Assessment history <span class="badge">{{ total_scans }} saved</span></h2>
       <form class="history-filter" method="get" action="{{ url_for('index') }}">

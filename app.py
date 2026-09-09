@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, Response, session
 from scanner import scan_target
 from api_scanner import scan_api
 from network_scanner import scan_domain, scan_ip
+from access_lab import run_access_lab
+import hmac
+from urllib.parse import urlsplit
 import os
 import secrets
 import sqlite3
@@ -13,11 +16,44 @@ from pathlib import Path
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SENTINELAI_SECRET_KEY") or secrets.token_hex(32)
-SCAN_LABELS = {"website": "Website", "api": "API", "domain": "Domain", "ip": "IP Address"}
+SCANNER_VERSION = "0.4.0"
+app.config.update(MAX_CONTENT_LENGTH=16_384, SESSION_COOKIE_SAMESITE="Strict",
+                  SESSION_COOKIE_HTTPONLY=True, TRUSTED_HOSTS=["localhost", "127.0.0.1", "[::1]"])
+SCAN_LABELS = {"website": "Website", "api": "API", "domain": "Domain", "ip": "IP Address", "access_lab": "Access-control lab"}
 SCANNERS = {"website": scan_target, "api": scan_api, "domain": scan_domain, "ip": scan_ip}
 app.jinja_env.globals["scan_labels"] = SCAN_LABELS
+app.jinja_env.globals["scan_types"] = {key: SCAN_LABELS[key] for key in SCANNERS}
 
 DB_PATH = Path(__file__).parent / "sentinelai.db"
+
+
+@app.context_processor
+def csrf_context():
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_urlsafe(32)
+    return {"csrf_token": session["csrf_token"]}
+
+
+@app.before_request
+def protect_submissions():
+    if request.method == "POST":
+        expected = session.get("csrf_token", "")
+        supplied = request.form.get("csrf_token", "")
+        if not expected or not hmac.compare_digest(expected.encode(), supplied.encode()):
+            abort(400, description="The form expired or could not be verified. Reload the page and try again.")
+        origin = request.headers.get("Origin")
+        if origin:
+            parsed = urlsplit(origin)
+            if parsed.scheme != request.scheme or parsed.netloc != request.host:
+                abort(403, description="Cross-origin submissions are not allowed.")
+
+
+@app.after_request
+def protect_local_pages(response):
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
 
 
 def init_db():
@@ -93,7 +129,7 @@ def dashboard(selected_type="website", target="", filter_type="", query=""):
 def index():
     filter_type = request.args.get("type", "")
     query = request.args.get("q", "").strip()[:200]
-    if filter_type and filter_type not in SCANNERS:
+    if filter_type and filter_type not in SCAN_LABELS:
         abort(400, description="Unknown scan type filter.")
     return dashboard(filter_type=filter_type, query=query)
 
@@ -117,7 +153,7 @@ def scan():
         result["scan_type"] = scan_type
         result["scanned_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
         result["duration_ms"] = round((monotonic() - started) * 1000)
-        result["scanner_version"] = "0.3.0"
+        result["scanner_version"] = SCANNER_VERSION
         scan_id = save_scan(result)
         return redirect(url_for("scan_detail", scan_id=scan_id), code=303)
     except ValueError as exc:
@@ -126,6 +162,28 @@ def scan():
     except Exception:
         flash("The assessment could not be completed. Check your target and connection, then try again.")
         return dashboard(selected_type=scan_type), 500
+
+
+@app.get("/lab")
+def lab_index():
+    return render_template("lab.html")
+
+
+@app.post("/lab/run")
+def lab_run():
+    try:
+        started = monotonic()
+        result = run_access_lab()
+        result["scanned_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        result["duration_ms"] = round((monotonic() - started) * 1000)
+        result["scanner_version"] = SCANNER_VERSION
+        return redirect(url_for("scan_detail", scan_id=save_scan(result)), code=303)
+    except ValueError as exc:
+        flash(str(exc))
+        return render_template("lab.html"), 400
+    except Exception:
+        flash("The local training run could not complete. No result was saved. Check whether this environment allows a loopback server.")
+        return render_template("lab.html"), 500
 
 
 def load_scan(scan_id):

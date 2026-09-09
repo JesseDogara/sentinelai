@@ -50,6 +50,27 @@
     </section>
 
     {% endif %}
+    {% if result.get("access_comparisons") %}
+    <section class="card">
+      <h2>Broken versus fixed: recorded evidence</h2>
+      <p class="muted">Synthetic local training only. “Denied” applies to this one read attempt; it is not a security certification.</p>
+      {% for comparison in result["access_comparisons"] %}
+      <article class="finding">
+        <h3>{{ comparison["scenario"] }} API</h3>
+        <p><strong>{{ comparison["outcome"] }}</strong></p>
+        <div class="table-scroll"><table><thead><tr><th>Request</th><th>Expected behavior</th><th>HTTP status</th></tr></thead><tbody>
+          <tr><td>A reads A’s record</td><td>Owner can read</td><td>{{ comparison["owner_a_status"] }}</td></tr>
+          <tr><td>B reads B’s record</td><td>Owner can read</td><td>{{ comparison["owner_b_status"] }}</td></tr>
+          <tr><td>Anonymous reads A’s record</td><td>Authentication required</td><td>{{ comparison["anonymous_status"] }}</td></tr>
+          <tr><td>B reads A’s record</td><td>Access denied</td><td>{{ comparison["cross_account_status"] }}</td></tr>
+        </tbody></table></div>
+        <p>Baseline controls matched: <strong>{{ "Yes" if comparison["controls_valid"] else "No" }}</strong></p>
+        <p>A’s exact private record returned to B: <strong>{{ "Yes" if comparison["private_record_matched"] else "No" }}</strong></p>
+      </article>
+      {% endfor %}
+      <a href="{{ url_for('lab_index') }}">Return to the lesson</a>
+    </section>
+    {% endif %}
     {% if result.get("dns_queries") %}
     <section class="card"><h2>DNS lookup results</h2>
       {% for query in result["dns_queries"] %}

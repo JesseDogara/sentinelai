@@ -25,3 +25,16 @@ post credentials, real target data or exploit details in a public issue.
 
 See docs/product-roadmap.md for known hardening work. This project is not a
 production service, penetration-test certification or automatic bounty generator.
+
+## Local training lab
+
+The deliberately vulnerable API is created only during a local training run, with
+synthetic records and random credentials. It binds to loopback on an ephemeral
+port and is shut down afterward. It is not a deployment example. No external URL
+or real credential input is accepted by this workflow. See
+[the lab's scope and limits](docs/access-control-lab.md).
+
+Dashboard forms require CSRF tokens; requests using untrusted Host values or
+cross-origin POSTs are rejected. These safeguards do not make the app suitable
+for public hosting. The lab's scope restrictions do not apply to the existing
+Website/API/Domain/IP scanners.

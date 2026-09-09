@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 
 import app
+from _test_support import csrf_post
 from reporting import markdown_report
 
 
@@ -13,7 +14,7 @@ class ReportingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.object(app, 'DB_PATH', Path(directory)/'scans.db'):
             app.init_db()
             client = app.app.test_client()
-            response = client.post('/scan', data={'scan_type':'ip', 'target':'::1'})
+            response = csrf_post(client, '/scan', data={'scan_type':'ip', 'target':'::1'})
             self.assertEqual(response.status_code, 303)
             self.assertEqual(response.location, '/scans/1')
             for _ in range(2): self.assertEqual(client.get(response.location).status_code, 200)
@@ -21,7 +22,7 @@ class ReportingTests(unittest.TestCase):
             raw = client.get('/scans/1/export/json')
             self.assertEqual(raw.status_code, 200)
             result = json.loads(raw.data)
-            self.assertEqual(result['scanner_version'], '0.3.0')
+            self.assertEqual(result['scanner_version'], app.SCANNER_VERSION)
             self.assertIn('+00:00', result['scanned_at'])
             self.assertGreaterEqual(result['duration_ms'], 0)
             self.assertIn('attachment;', raw.headers['Content-Disposition'])
