@@ -14,32 +14,165 @@ Only assess systems you own or have permission to test. No exploitation,
 credential guessing, port sweeps or smart-contract scanning is included.
 This is a local learning product, not a certified or production-hardened scanner.
 
-## Start on macOS
+## Setup: macOS, Linux and Windows
 
-Open the project folder in Terminal or VS Code. For a clone named `sentinelai`:
+Use Python 3.12 where possible (the version used by CI), and Git if you want a
+clone. Install Python from [python.org](https://www.python.org/downloads/) or your
+operating system's package manager. Keep each operating system's `.venv` separate;
+a Windows virtual environment cannot be reused inside WSL or Linux.
+
+| Environment | Website / API / local IP information | Domain / reverse DNS |
+| --- | --- | --- |
+| macOS | Available | Requires `/usr/bin/dig` (normally included) |
+| Linux | Available | Install `dig` at `/usr/bin/dig` |
+| Windows PowerShell (native) | Available | Not supported by the current DNS backend; use WSL |
+| Windows with WSL Ubuntu | Use the Linux setup below | Install `dnsutils` inside WSL |
+
+Automated platform verification currently runs on macOS only. Linux and Windows
+instructions are documented setup paths; they are not claims of native Windows
+or Linux CI coverage. The DNS implementation currently uses a fixed Unix path.
+
+### Get the code
+
+The repository is private, so your GitHub account needs access. Authenticate Git
+with GitHub CLI, GitHub Desktop or your credential manager before cloning:
+
+```text
+git clone https://github.com/JesseDogara/sentinelai.git
+cd sentinelai
+```
+
+Alternatively, sign in on GitHub and use **Code → Download ZIP**, extract it, then
+open the extracted project folder in your terminal. Replace `cd sentinelai` below
+with that folder's actual name if it differs. Never put a token in the clone URL.
+
+### Start on macOS
+
+From the project folder, the existing convenience script creates the environment,
+installs dependencies and starts the app:
 
 ```bash
-cd sentinelai
 ./run_mac.sh
 ```
 
-The startup script creates `.venv` if needed and installs the pinned requirements.
-Keep the terminal open. Visit `http://127.0.0.1:5000`.
+Or choose Python 3.12 explicitly and set up manually:
 
-If packages are already installed, an offline startup is:
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python app.py
+```
+
+If `python3.12` is unavailable, install it first. If the script reports permission
+denied after a ZIP download, run `chmod +x run_mac.sh` or use the manual commands.
+
+### Start on Linux
+
+On Ubuntu/Debian, install Python environment support and the DNS utility:
+
+```bash
+sudo apt update
+sudo apt install python3 python3-venv python3-pip dnsutils git
+```
+
+On Fedora, the equivalent packages are:
+
+```bash
+sudo dnf install python3 python3-pip bind-utils git
+```
+
+Then, from the project folder:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python app.py
+```
+
+Check `python3 --version` before setup; use `python3.12` to create the environment
+if you installed that version separately. Confirm DNS availability with
+`/usr/bin/dig -v`. On other distributions, install the package providing that path.
+Use the virtual environment for Python packages rather than `sudo pip`.
+
+### Start on Windows (PowerShell)
+
+Install Python 3.12, then open PowerShell in the project folder:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe app.py
+```
+
+If the `py` launcher is unavailable, use `python -m venv .venv` after confirming
+`python --version` selects the Python installation you intend to use. These
+commands call the environment's interpreter directly, so activating a PowerShell
+script or changing the execution policy is unnecessary.
+
+Native Windows supports Website, API and local IP classification. Leave **Look up
+reverse DNS** unchecked. Domain and reverse-DNS lookups require the WSL setup
+below; installing Python alone does not provide the current `/usr/bin/dig` backend.
+
+### Windows: use all four modules through WSL
+
+Follow [Microsoft's WSL installation guide](https://learn.microsoft.com/en-us/windows/wsl/install).
+On a supported Windows system, open PowerShell **as Administrator** and run:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Restart if prompted, launch Ubuntu and complete its first-run user setup. In the
+**Ubuntu terminal**, follow the Ubuntu/Debian Linux instructions above. Clone or
+extract the project inside WSL and create a fresh Linux `.venv`; do not reuse the
+Windows `.venv`. You can open the app from your Windows browser at the address below.
+
+### Open, stop and restart
+
+On every platform, open **http://127.0.0.1:5000** and keep the server terminal open.
+Press **Ctrl+C** in that terminal to stop it. After the first installation, restart
+from the project folder without reinstalling dependencies:
+
+macOS / Linux / WSL:
 
 ```bash
 .venv/bin/python app.py
 ```
 
-DNS lookup uses macOS `/usr/bin/dig`; no new Python dependency is required. The
-local Flask development server binds to loopback. Do not expose it to a network:
-it has no user authentication or deployment hardening. Debug mode is off by default;
-set `SENTINELAI_DEBUG=1` only for development. The session key is random per process
-unless `SENTINELAI_SECRET_KEY` is supplied through the environment.
-The current Python 3.9/LibreSSL environment emits an urllib3 compatibility warning;
-local checks can pass despite this. A supported Python/OpenSSL environment is a
-separate maintenance milestone, not something this release silently fixes.
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe app.py
+```
+
+If port 5000 is busy, choose another local port. On macOS/Linux/WSL:
+
+```bash
+SENTINELAI_PORT=5001 .venv/bin/python app.py
+```
+
+On PowerShell:
+
+```powershell
+$env:SENTINELAI_PORT = "5001"
+.\.venv\Scripts\python.exe app.py
+```
+
+Then open `http://127.0.0.1:5001`. Do not run a second server on the same port.
+
+### Local configuration
+
+The Flask development server binds to loopback. It has no user authentication or
+production deployment hardening. Debug mode is off by default; set
+`SENTINELAI_DEBUG=1` only for development. The session key is random per process
+unless `SENTINELAI_SECRET_KEY` is supplied through the environment. `.env.example`
+is a reference; the app does not automatically load `.env` files.
+
+Older macOS system Python builds may emit an urllib3/LibreSSL compatibility warning.
+Use a modern Python installation with OpenSSL and create a new virtual environment
+with that interpreter. Passing local tests on an older interpreter does not resolve
+its TLS compatibility warning. See [Python's virtual-environment documentation](https://docs.python.org/3.12/library/venv.html)
+for the platform-specific directory layout and environment setup.
 
 ## Use the dashboard
 
@@ -94,9 +227,20 @@ remain local time; newly stored result metadata explicitly uses UTC.
 
 ## Verify changes
 
+macOS / Linux / WSL (with `/usr/bin/dig` installed):
+
 ```bash
 .venv/bin/python -m unittest discover -v
 ```
+
+Native Windows: run the Website/API, local IP and reporting regression tests:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest -v test_api test_reporting
+```
+
+The full DNS test suite currently requires the Unix DNS utility to be present,
+even though responses are mocked. Run the full suite inside WSL for that coverage.
 
 Tests use isolated databases, local HTTP fixtures and mocked DNS responses. They
 cover all four routes, migration, parsing, malformed input, 401/403/302/429/500,

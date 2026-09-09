@@ -14,6 +14,9 @@ git commit -m "Describe the resulting behavior"
 git push -u origin HEAD
 ```
 
+For native Windows, use the PowerShell test command in [README.md](README.md#verify-changes);
+run the full DNS suite inside WSL.
+
 Tests should use local fixtures or mocks; never contact third-party scan targets
 in automated tests. Preserve existing SQLite records, escape untrusted evidence,
 and distinguish missing information from vulnerabilities.
