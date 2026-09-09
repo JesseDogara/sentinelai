@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from time import monotonic
 from reporting import markdown_report
 from pathlib import Path
+from contextlib import closing
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SENTINELAI_SECRET_KEY") or secrets.token_hex(32)
@@ -118,7 +119,7 @@ def get_history(limit=50, scan_type="", query=""):
 
 
 def dashboard(selected_type="website", target="", filter_type="", query=""):
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         counts = dict(conn.execute("SELECT scan_type, COUNT(*) FROM scans GROUP BY scan_type"))
     return render_template("index.html", history=get_history(scan_type=filter_type, query=query),
                            selected_type=selected_type, target=target, filter_type=filter_type,
@@ -187,7 +188,7 @@ def lab_run():
 
 
 def load_scan(scan_id):
-    with sqlite3.connect(DB_PATH) as conn:
+    with closing(sqlite3.connect(DB_PATH)) as conn:
         row = conn.execute("SELECT result_json FROM scans WHERE id = ?", (scan_id,)).fetchone()
     if not row or not row[0]:
         abort(404, description="Detailed results are available for scans made after the API upgrade.")

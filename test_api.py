@@ -1,3 +1,4 @@
+from contextlib import closing
 import json
 import sqlite3
 import tempfile
@@ -56,7 +57,7 @@ class Tests(unittest.TestCase):
     def test_history_migration_and_routes(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(app, 'DB_PATH', Path(directory) / 'history.db'):
-                with sqlite3.connect(app.DB_PATH) as conn:
+                with closing(sqlite3.connect(app.DB_PATH)) as conn, conn:
                     conn.execute('CREATE TABLE scans (id INTEGER PRIMARY KEY AUTOINCREMENT, target TEXT NOT NULL, scanned_at TEXT NOT NULL, score INTEGER NOT NULL, findings_json TEXT NOT NULL)')
                     conn.execute("INSERT INTO scans VALUES (1, 'old', 'yesterday', 80, '[]')")
                 app.init_db(); app.init_db()
