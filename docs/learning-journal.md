@@ -306,4 +306,4 @@ live native-Python Render service from the repository's optional Docker deployme
 Created a factual public-beta launch checklist, portfolio case study and social-media
 draft pack. No customer accounts, permanent database, payment system, testimonials,
 AI model or paid plan is claimed. Those remain potential later phases after genuine
-tester feedback.
+tester feedback.\nRender initially selected its Python 3.14 default for the native service. A root\n`.python-version` file now pins native builds to the Python 3.12 release line used\nby the project and CI, removing that runtime/documentation mismatch.\n

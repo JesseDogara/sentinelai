@@ -313,7 +313,7 @@ container builds on Linux, and Dependabot proposes dependency updates monthly.
 
 - `app.py`: module routing, safety controls, persistence, filters and report downloads.
 - `target_safety.py`: public destination validation and URL query redaction.
-- `Dockerfile`, `render.yaml`: production Gunicorn container and Render Blueprint.
+- `.python-version`: pins Render's native runtime to the Python 3.12 release line.\n- `Dockerfile`, `render.yaml`: production Gunicorn container and Render Blueprint.
 - `scanner.py`: existing Website checks.
 - `api_scanner.py`: bounded API observations.
 - `network_scanner.py`: input validation, bounded DNS, IP metadata.
