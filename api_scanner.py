@@ -2,6 +2,7 @@
 from urllib.parse import urlsplit, urlunsplit
 import requests
 from scanner import SECURITY_HEADERS
+from target_safety import bounded_observation, redact_query, validate_outbound_url
 
 CORS_HEADERS = ("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials",
                 "Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
@@ -26,15 +27,16 @@ def normalize_api_target(target):
             raise ValueError()
     except ValueError:
         raise ValueError("Enter a valid HTTP or HTTPS API URL without embedded credentials.")
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, parsed.query, ""))
+    normalized = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, parsed.query, ""))
+    validate_outbound_url(normalized)
+    return normalized
 
 
 def scan_api(target):
     target = normalize_api_target(target)
     parsed = urlsplit(target)
     # Query values may contain secrets: send as entered, but never persist/display them.
-    display_target = urlunsplit((parsed.scheme, parsed.netloc, parsed.path,
-                                "[redacted]" if parsed.query else "", ""))
+    display_target = redact_query(target)
     try:
         with requests.Session() as session:
             session.trust_env = False  # Avoid implicit .netrc credentials and environment proxies.
@@ -43,10 +45,10 @@ def scan_api(target):
                                       "Accept": "application/json, */*"}) as response:
                 status = response.status_code
                 headers = response.headers
-                content_type = headers.get("Content-Type", "Not observed")
-                groups = {"Security headers": {h: headers.get(h, "Not observed") for h in SECURITY_HEADERS},
-                          "CORS response headers": {h: headers.get(h, "Not observed") for h in CORS_HEADERS},
-                          "Rate-limit response headers": {h: headers.get(h, "Not observed") for h in RATE_HEADERS}}
+                content_type = bounded_observation(headers.get("Content-Type", "Not observed"), 256)
+                groups = {"Security headers": {h: bounded_observation(headers.get(h, "Not observed")) for h in SECURITY_HEADERS},
+                          "CORS response headers": {h: bounded_observation(headers.get(h, "Not observed")) for h in CORS_HEADERS},
+                          "Rate-limit response headers": {h: bounded_observation(headers.get(h, "Not observed")) for h in RATE_HEADERS}}
                 challenge = "Present" if "WWW-Authenticate" in headers else "Not observed"
     except requests.RequestException:
         raise ValueError("API request failed: check the URL, connection and TLS certificate. No result was saved.") from None

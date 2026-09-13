@@ -17,7 +17,7 @@ python3 -m pip install --upgrade pip
 python3 -m pip install -r requirements.txt
 
 echo ""
-echo "SentinelAI is starting..."
+echo "SentinelAI is starting with Waitress..."
 echo "Open http://127.0.0.1:5000 in your browser."
 echo ""
 

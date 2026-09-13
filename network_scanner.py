@@ -2,8 +2,10 @@
 import ipaddress
 from pathlib import Path
 import re
-import subprocess
+# Required for the fixed-path, fixed-option dig invocation below.
+import subprocess  # nosec B404
 import time
+from target_safety import validate_public_domain, validate_public_reverse_dns
 
 DIG_PATH = Path('/usr/bin/dig')
 RECORD_TYPES = ('A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'CAA')
@@ -30,6 +32,7 @@ def normalize_domain(target):
     if (len(name) > 253 or len(labels) < 2 or all(c in '0123456789.' for c in name)
             or any(not re.fullmatch(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?', label) for label in labels)):
         raise ValueError('Enter a valid domain name with at least two labels, such as example.com.')
+    validate_public_domain(name)
     return name
 
 
@@ -46,20 +49,21 @@ def normalize_ip(target):
 def query_dns(name, record_type, timeout=3):
     """Only call with a validated absolute name and a fixed record type."""
     if not DIG_PATH.is_file():
-        raise ValueError('DNS lookup needs the macOS /usr/bin/dig utility, which was not found.')
+        raise ValueError('DNS lookup needs the /usr/bin/dig utility, which was not found.')
     args = [str(DIG_PATH), name + '.', record_type,
             '+time=2', '+tries=1', '+nosearch', '+notcp', '+ignore',
             '+notrace', '+nonssearch', '+fail', '+nomultiline', '+ttlid', '+cl',
             '+noall', '+comments', '+answer']
     try:
-        completed = subprocess.run(args, capture_output=True, text=True, timeout=timeout,
+        # Executable, record type and options are fixed; `name` passed strict validation.
+        completed = subprocess.run(args, capture_output=True, text=True, timeout=timeout,  # nosec B603
                                    check=False, encoding='utf-8', errors='replace')
     except subprocess.TimeoutExpired:
         return dict(query_type=record_type, status='Timeout', records=[])
     except OSError:
         raise ValueError('The local DNS lookup utility could not be started.') from None
     if completed.returncode == 1:
-        raise ValueError('The DNS utility rejected its options. Check macOS dig compatibility.')
+        raise ValueError('The DNS utility rejected its options. Check dig compatibility.')
     output = completed.stdout
     match = re.search(r'\bstatus: ([A-Z0-9]+)', output)
     if not match:
@@ -113,6 +117,8 @@ def scan_domain(target):
 
 def scan_ip(target, reverse_dns=False):
     address = normalize_ip(target)
+    if reverse_dns:
+        validate_public_reverse_dns(address)
     flags = [('Loopback', address.is_loopback), ('Link-local', address.is_link_local),
              ('Multicast', address.is_multicast), ('Unspecified', address.is_unspecified),
              ('Reserved (Python flag)', address.is_reserved),

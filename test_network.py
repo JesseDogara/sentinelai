@@ -16,6 +16,13 @@ def dns_output(status='NOERROR', records='', flags='qr rd ra'):
 
 
 class NetworkTests(unittest.TestCase):
+    def setUp(self):
+        # Parser tests mock the process output; use this source file as a portable
+        # existing path so the runtime dependency check does not make fixtures OS-specific.
+        dig_path = patch('network_scanner.DIG_PATH', Path(__file__))
+        dig_path.start()
+        self.addCleanup(dig_path.stop)
+
     def test_domain_validation(self):
         self.assertEqual(normalize_domain(' Example.COM. '), 'example.com')
         self.assertEqual(normalize_domain('bücher.example'), 'xn--bcher-kva.example')

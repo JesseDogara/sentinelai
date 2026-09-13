@@ -22,10 +22,16 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
+      - name: Install Linux DNS utility
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes dnsutils
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
       - name: Run portable regression tests and local access-control lab
-        run: python -m unittest -v test_api test_reporting test_access_lab
+        run: python -m unittest -v test_api test_reporting test_access_lab test_public_safety
       - name: Run DNS regression tests
-        if: runner.os == 'macOS'
+        if: runner.os != 'Windows'
         run: python -m unittest -v test_network
+      - name: Build production container
+        if: runner.os == 'Linux'
+        run: docker build --tag sentinelai:test .

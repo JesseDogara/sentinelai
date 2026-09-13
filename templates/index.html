@@ -8,10 +8,16 @@
 </head>
 <body>
   <main class="container">
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a aria-current="page" href="{{ url_for('index') }}">Scanner</a>
+      <a href="{{ url_for('project_page') }}">Project portfolio</a>
+      <a href="https://github.com/JesseDogara/sentinelai" rel="noreferrer">GitHub</a>
+    </nav>
     <section class="hero">
       <p class="eyebrow">CYBERSECURITY + AI LEARNING PROJECT</p>
       <h1>SentinelAI</h1>
       <p class="subtitle">Understand your websites, APIs, domains and IP addresses.</p>
+      {% if public_mode %}<p class="muted">Public safety mode is active. Only assess targets you own or are authorized to test.</p>{% endif %}
     </section>
 
     <section class="stats" aria-label="Saved assessment counts">
@@ -37,17 +43,18 @@
         <label id="target-label" for="target">Target</label>
         <input id="target" name="target" value="{{ target }}" placeholder="https://example.com" aria-describedby="scan-help" autocomplete="off" spellcheck="false" required maxlength="2048">
         <label id="reverse-option" class="checkbox-row" hidden><input type="checkbox" name="reverse_dns"> Look up reverse DNS (PTR) for this IP</label>
+        {% if public_mode %}<label class="checkbox-row"><input type="checkbox" name="authorized" required> I own this target or have explicit permission to assess it</label>{% endif %}
         <button id="scan-button" type="submit">Run assessment</button>
         <p id="scan-progress" class="muted" role="status" hidden>Assessment in progress…</p>
       </form>
     </section>
 
-    <section class="card">
+    {% if not public_mode %}<section class="card">
       <p class="eyebrow">GUIDED LOCAL TRAINING</p>
       <h2>Can one account read another account’s private record?</h2>
       <p class="muted">Compare a deliberately broken API with its fixed version using two temporary accounts and synthetic records. Eight requests, no external target and no real credentials.</p>
       <a class="button-link" href="{{ url_for('lab_index') }}">Open access-control lab</a>
-    </section>
+    </section>{% endif %}
     <section class="card">
       <h2>Assessment history <span class="badge">{{ total_scans }} saved</span></h2>
       <form class="history-filter" method="get" action="{{ url_for('index') }}">

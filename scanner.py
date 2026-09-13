@@ -1,5 +1,6 @@
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 import requests
+from target_safety import bounded_observation, redact_query, validate_outbound_url
 
 SECURITY_HEADERS = {
     "Content-Security-Policy": {
@@ -41,28 +42,52 @@ def normalize_target(target):
     if not target.startswith(("http://", "https://")):
         target = "https://" + target
 
-    parsed = urlparse(target)
-
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        raise ValueError("Please enter a valid HTTP or HTTPS URL.")
+    try:
+        validate_outbound_url(target)
+    except ValueError as exc:
+        raise ValueError(str(exc)) from None
 
     return target
 
 
 def scan_target(target):
     target = normalize_target(target)
-
-    response = requests.get(
-        target,
-        timeout=10,
-        allow_redirects=True,
-        headers={"User-Agent": "SentinelAI-Learning-Project/0.1"},
-    )
+    current = target
+    response = None
+    try:
+        with requests.Session() as session:
+            session.trust_env = False
+            for redirect_count in range(4):
+                validate_outbound_url(current)
+                response = session.get(
+                    current,
+                    timeout=(5, 10),
+                    allow_redirects=False,
+                    stream=True,
+                    headers={"User-Agent": "SentinelAI-Learning-Project/0.5"},
+                )
+                if response.is_redirect or response.is_permanent_redirect:
+                    location = response.headers.get("Location")
+                    response.close()
+                    if not location:
+                        break
+                    if redirect_count == 3:
+                        raise ValueError("The website redirected too many times. No result was saved.")
+                    current = urljoin(current, location)
+                    continue
+                break
+            if response is None:
+                raise ValueError("The website did not return a response. No result was saved.")
+            status_code = response.status_code
+            response_headers = response.headers.copy()
+            final_url = current
+            response.close()
+    except requests.RequestException:
+        raise ValueError("Website request failed: check the URL, connection and TLS certificate. No result was saved.") from None
 
     findings = []
     score = 100
 
-    final_url = response.url
     parsed = urlparse(final_url)
 
     if parsed.scheme != "https":
@@ -84,7 +109,7 @@ def scan_target(target):
         })
 
     for header, metadata in SECURITY_HEADERS.items():
-        value = response.headers.get(header)
+        value = response_headers.get(header)
 
         if value:
             findings.append({
@@ -115,10 +140,10 @@ def scan_target(target):
         rating = "Weak"
 
     return {
-        "target": target,
-        "final_url": final_url,
-        "status_code": response.status_code,
-        "server": response.headers.get("Server", "Not disclosed"),
+        "target": redact_query(target),
+        "final_url": redact_query(final_url),
+        "status_code": status_code,
+        "server": bounded_observation(response_headers.get("Server", "Not disclosed"), 256),
         "score": score,
         "rating": rating,
         "findings": findings,

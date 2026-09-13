@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SentinelAI Project Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SentinelAI cybersecurity learning project: scope, engineering decisions and safety controls.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a href="{{ url_for('index') }}">Scanner</a>
+      <a aria-current="page" href="{{ url_for('project_page') }}">Project portfolio</a>
+      <a href="https://github.com/JesseDogara/sentinelai" rel="noreferrer">GitHub</a>
+    </nav>
+
+    <section class="hero">
+      <p class="eyebrow">PORTFOLIO CASE STUDY</p>
+      <h1>SentinelAI</h1>
+      <p class="subtitle">A bounded security-observation dashboard built to turn raw HTTP, DNS and IP evidence into understandable reports.</p>
+      <p class="muted">Current scanner version {{ scanner_version }}</p>
+    </section>
+
+    <div class="portfolio-grid">
+      <section class="card">
+        <h2>What it does</h2>
+        <ul class="plain-list">
+          <li>Checks HTTPS and common browser security headers.</li>
+          <li>Records one unauthenticated API response without reading its body.</li>
+          <li>Collects bounded exact-name DNS observations.</li>
+          <li>Explains IP address properties without port scanning.</li>
+          <li>Exports saved evidence as Markdown and JSON.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Public safety design</h2>
+        <ul class="plain-list">
+          <li>Blocks local, private, reserved and special-use web destinations.</li>
+          <li>Revalidates redirect targets and permits only standard web ports.</li>
+          <li>Limits scan frequency and concurrent work.</li>
+          <li>Separates each visitor’s result history.</li>
+          <li>Disables the deliberately vulnerable local lab online.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Engineering</h2>
+        <p>Python 3.12, Flask, Requests, SQLite, Waitress for local use, and Gunicorn in a non-root Docker container on Render.</p>
+        <p>Regression tests cover scanner bounds, failure handling, output escaping, CSRF/Host checks, report exports, public destination filtering and visitor isolation.</p>
+      </section>
+
+      <section class="card">
+        <h2>Honest boundaries</h2>
+        <p>SentinelAI makes observations; it does not exploit targets, guess credentials, sweep ports, confirm vulnerabilities or prove that a system is secure.</p>
+        <p>Only systems owned by the operator or covered by explicit authorization should be assessed.</p>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Try the working scanner</h2>
+      <p class="muted">Choose a bounded assessment and review both the evidence and the explanation of what it does—and does not—mean.</p>
+      <a class="button-link" href="{{ url_for('index') }}">Open SentinelAI</a>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: sentinelai
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: SENTINELAI_PUBLIC_MODE
+        value: "1"
+      - key: SENTINELAI_PROXY_FIX
+        value: "1"
+      - key: SENTINELAI_SECRET_KEY
+        generateValue: true

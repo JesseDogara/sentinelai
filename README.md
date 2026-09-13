@@ -1,8 +1,9 @@
 # SentinelAI
 
-A local security assessment dashboard for learning, inspection and evidence-based
-reporting. Four assessment modules and a separate local training lab keep each
-workflow's scope understandable.
+A security assessment dashboard for learning, inspection and evidence-based
+reporting. It runs privately on your computer and has a restricted public mode for
+portfolio deployment. Four assessment modules and a separate local training lab
+keep each workflow's scope understandable.
 
 | Module | What it does | What it does not establish |
 | --- | --- | --- |
@@ -13,7 +14,7 @@ workflow's scope understandable.
 
 Only assess systems you own or have permission to test. No exploitation,
 credential guessing, port sweeps or smart-contract scanning is included.
-This is a local learning product, not a certified or production-hardened scanner.
+This is a learning product, not a penetration test or security certification.
 
 ## Setup: macOS, Linux and Windows
 
@@ -35,8 +36,7 @@ DNS remains unsupported: that implementation uses a fixed Unix path.
 
 ### Get the code
 
-The repository is private, so your GitHub account needs access. Authenticate Git
-with GitHub CLI, GitHub Desktop or your credential manager before cloning:
+Clone the public repository:
 
 ```text
 git clone https://github.com/JesseDogara/sentinelai.git
@@ -163,11 +163,40 @@ Then open `http://127.0.0.1:5001`. Do not run a second server on the same port.
 
 ### Local configuration
 
-The Flask development server binds to loopback. It has no user authentication or
-production deployment hardening. Debug mode is off by default; set
-`SENTINELAI_DEBUG=1` only for development. The session key is random per process
-unless `SENTINELAI_SECRET_KEY` is supplied through the environment. `.env.example`
-is a reference; the app does not automatically load `.env` files.
+`python app.py` starts the production-quality Waitress WSGI server on loopback;
+it is reachable only from your computer. It does not use Flask's development
+server. The session key is random per process unless `SENTINELAI_SECRET_KEY` is
+supplied through the environment. `.env.example` is a reference; the app does not
+automatically load `.env` files.
+
+## Deploy publicly on Render
+
+The included `Dockerfile` runs Gunicorn as a non-root user and installs `dig` for
+the DNS module. `render.yaml` selects Render's free web-service plan, generates a
+session secret, enables proxy awareness and public safety mode, waits for GitHub
+checks to pass before automatic deploys, and checks `/healthz`.
+
+In Render, create a **Blueprint**, connect this repository, and select its
+`render.yaml`. No real secret belongs in GitHub. A custom domain must also be added
+to `SENTINELAI_TRUSTED_HOSTS` as an exact hostname.
+
+Public mode adds safeguards that are intentionally different from local mode:
+
+- only HTTP/HTTPS standard ports are allowed and local, private, reserved and
+  special-use destinations are rejected before outbound web requests;
+- every website redirect is revalidated, URL queries are redacted in saved data,
+  request bodies are not read, and outbound proxies or implicit credentials are
+  disabled;
+- each browser session sees only its own saved results; scan submissions are
+  limited to 10 per 10 minutes per client address and four concurrent scans;
+- the deliberately vulnerable access-control training lab is disabled;
+- trusted-host, CSRF, secure-cookie, browser-header, request-size and timeout
+  protections remain enabled.
+
+The free Render filesystem is ephemeral, so scan history can reset after a deploy,
+restart or service replacement. This avoids committing visitor data and avoids
+silently creating a paid resource. Add a persistent datastore later only after
+defining retention, deletion and privacy requirements.
 
 Older macOS system Python builds may emit an urllib3/LibreSSL compatibility warning.
 Use a modern Python installation with OpenSSL and create a new virtual environment
@@ -232,8 +261,10 @@ vulnerability. CAA inheritance and SPF/DKIM/DMARC validation are not implemented
 
 ## Persistence and compatibility
 
-`sentinelai.db` stores all types in one `scans` table. Additive migration introduces
-`scan_type` and `result_json`; old rows remain Website records. Legacy rows keep
+`sentinelai.db` stores all types in one `scans` table locally. In public mode,
+records include an opaque browser-session owner token and queries return only that
+session's records. Additive migration introduces `scan_type`, `result_json` and
+`owner_token`; old rows remain Website records. Legacy rows keep
 summary/findings data and lack the newer full-detail export. No existing rows are
 removed. The original NOT NULL score column uses an internal zero for observations;
 the saved result JSON uses null and the UI displays “Observations.” Old timestamps
@@ -268,11 +299,14 @@ check verifies the installed `dig` path and output format when network is availa
 See [the Git and GitHub guide](docs/github-workflow.md), [contribution guide](CONTRIBUTING.md),
 and [security notes](SECURITY.md). Scan databases, secrets, reports and virtual
 environments are excluded from version control. Portable tests run on macOS, Linux
-and Windows with Python 3.12; DNS tests run on macOS; Dependabot proposes dependency updates monthly.
+and Windows with Python 3.12; DNS tests run on macOS and Linux, the production
+container builds on Linux, and Dependabot proposes dependency updates monthly.
 
 ## Code map
 
-- `app.py`: module routing, persistence, filters, report downloads.
+- `app.py`: module routing, safety controls, persistence, filters and report downloads.
+- `target_safety.py`: public destination validation and URL query redaction.
+- `Dockerfile`, `render.yaml`: production Gunicorn container and Render Blueprint.
 - `scanner.py`: existing Website checks.
 - `api_scanner.py`: bounded API observations.
 - `network_scanner.py`: input validation, bounded DNS, IP metadata.
