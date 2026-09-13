@@ -94,6 +94,24 @@ class PublicApplicationTests(unittest.TestCase):
             self.assertEqual(portfolio.status_code, 200)
             self.assertIn(b"PORTFOLIO CASE STUDY", portfolio.data)
 
+    def test_public_https_origin_is_accepted_behind_render_proxy(self):
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(app, "DB_PATH", Path(directory) / "public.db"), \
+                patch.object(app, "PUBLIC_MODE", True):
+            app.init_db()
+            client = app.app.test_client()
+            with client.session_transaction() as session:
+                session["csrf_token"] = "render-proxy-test-token"
+                token = session["csrf_token"]
+            response = client.post(
+                "/scan",
+                base_url="http://localhost",
+                headers={"Origin": "https://localhost"},
+                data={"csrf_token": token, "scan_type": "ip", "target": "8.8.8.8",
+                      "authorized": "on"},
+            )
+            self.assertEqual(response.status_code, 303)
+
     def test_public_rate_limit_is_bounded(self):
         with patch.object(app, "PUBLIC_MODE", True):
             self.assertTrue(all(app.scan_rate_allowed("198.51.100.10")

@@ -90,6 +90,13 @@ def csrf_context():
     return {"csrf_token": session["csrf_token"]}
 
 
+def origin_matches_request(origin):
+    """Compare browser Origin with the externally visible request origin."""
+    parsed = urlsplit(origin)
+    expected_scheme = "https" if PUBLIC_MODE else request.scheme
+    return parsed.scheme == expected_scheme and parsed.netloc == request.host
+
+
 @app.before_request
 def protect_submissions():
     if request.method == "POST":
@@ -98,10 +105,8 @@ def protect_submissions():
         if not expected or not hmac.compare_digest(expected.encode(), supplied.encode()):
             abort(400, description="The form expired or could not be verified. Reload the page and try again.")
         origin = request.headers.get("Origin")
-        if origin:
-            parsed = urlsplit(origin)
-            if parsed.scheme != request.scheme or parsed.netloc != request.host:
-                abort(403, description="Cross-origin submissions are not allowed.")
+        if origin and not origin_matches_request(origin):
+            abort(403, description="Cross-origin submissions are not allowed.")
         if request.path == "/scan" and not scan_rate_allowed(request.remote_addr or "unknown"):
             abort(429, description="Scan limit reached. Try again in a few minutes.")
 
