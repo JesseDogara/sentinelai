@@ -105,7 +105,7 @@ class PublicApplicationTests(unittest.TestCase):
                 token = session["csrf_token"]
             response = client.post(
                 "/scan",
-                base_url="http://localhost",
+                base_url="http://localhost:443",
                 headers={"Origin": "https://localhost"},
                 data={"csrf_token": token, "scan_type": "ip", "target": "8.8.8.8",
                       "authorized": "on"},

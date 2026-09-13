@@ -94,7 +94,15 @@ def origin_matches_request(origin):
     """Compare browser Origin with the externally visible request origin."""
     parsed = urlsplit(origin)
     expected_scheme = "https" if PUBLIC_MODE else request.scheme
-    return parsed.scheme == expected_scheme and parsed.netloc == request.host
+    request_authority = urlsplit("//" + request.host)
+    if parsed.scheme != expected_scheme or not parsed.hostname or not request_authority.hostname:
+        return False
+    try:
+        origin_port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        request_port = request_authority.port or (443 if expected_scheme == "https" else 80)
+    except ValueError:
+        return False
+    return parsed.hostname.casefold() == request_authority.hostname.casefold() and origin_port == request_port
 
 
 @app.before_request
