@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <title>SentinelAI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SentinelAI public beta: bounded website, API, domain and IP security observations for authorized targets.">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,14 +12,20 @@
     <nav class="site-nav" aria-label="Primary navigation">
       <a aria-current="page" href="{{ url_for('index') }}">Scanner</a>
       <a href="{{ url_for('project_page') }}">Project portfolio</a>
+      <a href="{{ url_for('beta_page') }}">Beta guide</a>
       <a href="https://github.com/JesseDogara/sentinelai" rel="noreferrer">GitHub</a>
     </nav>
     <section class="hero">
-      <p class="eyebrow">CYBERSECURITY + AI LEARNING PROJECT</p>
+      <p class="eyebrow">CYBERSECURITY LEARNING PROJECT</p>
       <h1>SentinelAI</h1>
       <p class="subtitle">Understand your websites, APIs, domains and IP addresses.</p>
-      {% if public_mode %}<p class="muted">Public safety mode is active. Only assess targets you own or are authorized to test.</p>{% endif %}
+      {% if public_mode %}<p><a class="status-pill" href="{{ url_for('beta_page') }}">Free public beta · Scanner {{ scanner_version }}</a></p>{% endif %}
     </section>
+
+    {% if public_mode %}<section class="beta-banner" aria-labelledby="beta-title">
+      <div><h2 id="beta-title">Help test SentinelAI responsibly</h2><p>This beta is free while its reliability and usability are evaluated. Results are temporary and are observations—not vulnerability confirmations.</p></div>
+      <a class="button-link" href="{{ url_for('beta_page') }}">Read the beta guide</a>
+    </section>{% endif %}
 
     <section class="stats" aria-label="Saved assessment counts">
       {% for value, label in scan_labels.items() %}<div class="stat"><span class="label">{{ label }}</span><strong>{{ counts.get(value, 0) }}</strong><span class="muted"> saved</span></div>{% endfor %}
@@ -87,6 +94,7 @@
       <p class="muted">Website checks HTTPS and common headers. API observes one unauthenticated GET. Domain reads DNS records for an exact name. IP explains address flags, with an optional reverse-DNS lookup.</p>
       <p class="muted">Observations are evidence to review, not proof that a system is secure. No exploitation, credential guessing or port sweeps are performed.</p>
     </section>
+    <footer class="site-footer"><a href="{{ url_for('beta_page') }}">Beta, privacy and feedback</a><span>Scanner {{ scanner_version }}</span></footer>
   </main>
   <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
 </body>

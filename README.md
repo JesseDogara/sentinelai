@@ -5,6 +5,13 @@ reporting. It runs privately on your computer and has a restricted public mode f
 portfolio deployment. Four assessment modules and a separate local training lab
 keep each workflow's scope understandable.
 
+- **Public beta:** https://sentinelai-vn61.onrender.com
+- **Portfolio case study:** https://sentinelai-vn61.onrender.com/project
+
+The public beta is free and has no accounts or paid plans. Its SQLite scan history
+is temporary and can reset when the free Render service restarts, redeploys or
+spins down. See the in-app beta guide before testing an authorized target.
+
 | Module | What it does | What it does not establish |
 | --- | --- | --- |
 | Website | GET with redirects, HTTPS and common security-header checklist, existing score | Comprehensive application security or exploitability |

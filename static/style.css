@@ -186,4 +186,12 @@ button:disabled { opacity:.65; cursor:wait; }
 .portfolio-grid .card { margin:0; }
 .plain-list { padding-left:20px; color:#b9c7d6; }
 .plain-list li { margin:10px 0; }
+.status-pill { display:inline-block; padding:7px 11px; border:1px solid #4d6aa8; border-radius:999px; color:#cbd9ff; text-decoration:none; font-size:.86rem; font-weight:700; }
+.beta-banner { display:flex; justify-content:space-between; align-items:center; gap:22px; padding:20px 22px; margin:18px 0; border:1px solid #39558c; border-radius:16px; background:linear-gradient(135deg,rgba(51,83,145,.28),rgba(18,24,32,.95)); }
+.beta-banner h2, .beta-banner p { margin:0; }
+.beta-banner p { color:#b9c7d6; margin-top:7px; max-width:680px; }
+.cta-row, .site-footer { display:flex; flex-wrap:wrap; align-items:center; gap:18px; }
+.site-footer { justify-content:space-between; color:#8493a3; border-top:1px solid #263140; margin-top:34px; padding-top:22px; font-size:.9rem; }
+.step-list li { margin:14px 0; color:#b9c7d6; }
 @media(max-width:680px) { .portfolio-grid { grid-template-columns:1fr; } }
+@media(max-width:680px) { .beta-banner { align-items:flex-start; flex-direction:column; } }

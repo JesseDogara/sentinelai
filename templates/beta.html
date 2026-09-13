@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SentinelAI Public Beta Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How to test the SentinelAI public beta responsibly and report useful feedback.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a href="{{ url_for('index') }}">Scanner</a>
+      <a href="{{ url_for('project_page') }}">Project portfolio</a>
+      <a aria-current="page" href="{{ url_for('beta_page') }}">Beta guide</a>
+      <a href="https://github.com/JesseDogara/sentinelai" rel="noreferrer">GitHub</a>
+    </nav>
+
+    <section class="hero">
+      <p class="eyebrow">FREE PUBLIC BETA</p>
+      <h1>Test it responsibly.</h1>
+      <p class="subtitle">SentinelAI is collecting product feedback before accounts, permanent storage or paid plans are introduced.</p>
+      <p class="muted">Current scanner version {{ scanner_version }}</p>
+    </section>
+
+    <div class="portfolio-grid">
+      <section class="card">
+        <h2>Before you scan</h2>
+        <ol class="step-list">
+          <li>Use only a website, API, domain or IP address you own or have explicit permission to assess.</li>
+          <li>Do not enter passwords, API keys, access tokens or confidential query values.</li>
+          <li>Treat the output as evidence to review—not proof of a vulnerability or security certification.</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>Beta data notice</h2>
+        <p>There are no user accounts. A browser-session token separates your saved results from other visitors.</p>
+        <p>Scan history is stored on temporary service storage and can disappear after a restart, redeploy or idle shutdown. Download any report you need to keep.</p>
+      </section>
+
+      <section class="card">
+        <h2>Useful feedback</h2>
+        <ul class="plain-list">
+          <li>Which assessment type you tried.</li>
+          <li>What you expected to happen.</li>
+          <li>What was confusing or failed.</li>
+          <li>Your browser and device type.</li>
+        </ul>
+        <p class="muted">Never post private targets, credentials, response bodies or confidential scan results in a public issue.</p>
+      </section>
+
+      <section class="card">
+        <h2>Known boundaries</h2>
+        <p>The free service may take about a minute to wake after being idle. Scan history is not permanent, and the deliberately vulnerable local training lab is unavailable online.</p>
+        <p>SentinelAI does not currently contain an AI model, exploit targets, guess credentials or sweep ports.</p>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Try it and share feedback</h2>
+      <div class="cta-row">
+        <a class="button-link" href="{{ url_for('index') }}">Open the scanner</a>
+        <a href="https://github.com/JesseDogara/sentinelai/issues/new?template=beta-feedback.yml" rel="noreferrer">Submit safe beta feedback on GitHub</a>
+      </div>
+    </section>
+    <footer class="site-footer"><a href="{{ url_for('project_page') }}">Project case study</a><span>Free beta · No paid plan yet</span></footer>
+  </main>
+</body>
+</html>

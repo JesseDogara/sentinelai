@@ -240,3 +240,70 @@ Study authentication versus authorization first, then control experiments, preci
 evidence comparison, false positives, scope enforcement and secret redaction.
 Follow docs/access-control-lab.md. These lab-only controls are not yet a general
 external API testing or bounty-scope system.
+
+
+## September 13, 2026 — Public hardening and Render beta launch
+
+### Completed work
+
+Replaced development-server deployment with Gunicorn for the public service and
+Waitress for direct local runs. Added a production Dockerfile, Render configuration,
+health endpoint and public portfolio page. The live Render service runs the Python
+runtime with Gunicorn; the Dockerfile remains a separately tested deployment option.
+
+Public mode now requires an environment-supplied secret and enables secure cookies,
+trusted-host checks, HTTPS-aware proxy handling, CSRF and Origin checks, browser
+security headers, request-size limits, per-client scan limits and a four-scan global
+concurrency bound. Website and API targets reject local, private, reserved and
+special-use addresses, embedded credentials and nonstandard ports. Every redirect
+destination is revalidated. The local vulnerable training lab returns 404 publicly.
+
+Each public browser session receives a random owner token so visitors cannot open or
+export another visitor's stored result. The service still uses temporary SQLite;
+therefore this is isolation for a beta session, not durable account storage.
+
+### Verification results
+
+- 29 regression tests passed after adding the Render proxy-origin regression.
+- The pinned dependencies returned no known vulnerabilities in `pip-audit`.
+- Bandit completed without an unresolved finding.
+- Gunicorn and Waitress smoke tests returned a healthy application.
+- Render reported the final clean commit live; Gunicorn listened on the assigned
+  port and the service returned 200 for `/`, `/healthz` and `/project`.
+- The public `/lab` route returned 404 as designed.
+
+### Challenges and resolutions
+
+The GitHub connector could not perform a normal local `git push`, so Git blob, tree,
+commit and fast-forward reference operations were used without rewriting existing
+history. Render did not receive the connector-created push event automatically, so
+the same committed revisions were deliberately deployed through the Render API.
+
+A cloud verification browser sent `Origin: null` for form submissions. SentinelAI
+rejected it with 403. A temporary diagnostic recorded only origin/proxy metadata and
+confirmed that Render supplied the correct HTTPS scheme and host. The diagnostic was
+then removed. The protection was not weakened to accept opaque origins. A regression
+test verifies legitimate HTTPS origins when the proxy includes the default port.
+
+### Lessons learned
+
+- Public deployment changes the threat model; input validation alone is insufficient.
+- An HTTP 200 health response and a live process do not replace route, header and
+  failure-path tests.
+- Proxy headers and browser Origin values must be normalized by meaning, not compared
+  as arbitrary strings.
+- A security control should not be weakened merely to satisfy a restricted test tool.
+- Marketing claims must reflect the deployed architecture and current features.
+
+
+## September 13, 2026 — Free public-beta preparation
+
+Added a visible free-beta status, responsible-use guide, temporary-data notice and
+safe feedback route. GitHub's beta feedback form explicitly prohibits credentials,
+private targets and confidential results. The portfolio copy now distinguishes the
+live native-Python Render service from the repository's optional Docker deployment.
+
+Created a factual public-beta launch checklist, portfolio case study and social-media
+draft pack. No customer accounts, permanent database, payment system, testimonials,
+AI model or paid plan is claimed. Those remain potential later phases after genuine
+tester feedback.

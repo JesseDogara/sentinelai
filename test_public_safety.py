@@ -93,6 +93,15 @@ class PublicApplicationTests(unittest.TestCase):
             portfolio = app.app.test_client().get("/project")
             self.assertEqual(portfolio.status_code, 200)
             self.assertIn(b"PORTFOLIO CASE STUDY", portfolio.data)
+            self.assertIn(b"Gunicorn runs the live Render service", portfolio.data)
+            beta = app.app.test_client().get("/beta")
+            self.assertEqual(beta.status_code, 200)
+            self.assertIn(b"FREE PUBLIC BETA", beta.data)
+            self.assertIn(b"does not currently contain an AI model", beta.data)
+            self.assertIn(b"beta-feedback.yml", beta.data)
+            dashboard = app.app.test_client().get("/")
+            self.assertIn(b"Free public beta", dashboard.data)
+            self.assertIn(app.SCANNER_VERSION.encode(), dashboard.data)
 
     def test_public_https_origin_is_accepted_behind_render_proxy(self):
         with tempfile.TemporaryDirectory() as directory, \

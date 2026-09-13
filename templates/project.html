@@ -12,6 +12,7 @@
     <nav class="site-nav" aria-label="Primary navigation">
       <a href="{{ url_for('index') }}">Scanner</a>
       <a aria-current="page" href="{{ url_for('project_page') }}">Project portfolio</a>
+      <a href="{{ url_for('beta_page') }}">Beta guide</a>
       <a href="https://github.com/JesseDogara/sentinelai" rel="noreferrer">GitHub</a>
     </nav>
 
@@ -19,7 +20,7 @@
       <p class="eyebrow">PORTFOLIO CASE STUDY</p>
       <h1>SentinelAI</h1>
       <p class="subtitle">A bounded security-observation dashboard built to turn raw HTTP, DNS and IP evidence into understandable reports.</p>
-      <p class="muted">Current scanner version {{ scanner_version }}</p>
+      <p><span class="status-pill">Free public beta · Scanner {{ scanner_version }}</span></p>
     </section>
 
     <div class="portfolio-grid">
@@ -47,7 +48,7 @@
 
       <section class="card">
         <h2>Engineering</h2>
-        <p>Python 3.12, Flask, Requests, SQLite, Waitress for local use, and Gunicorn in a non-root Docker container on Render.</p>
+        <p>Python 3.12, Flask, Requests and SQLite; Waitress serves local use and Gunicorn runs the live Render service. A non-root Docker deployment is also included in the repository.</p>
         <p>Regression tests cover scanner bounds, failure handling, output escaping, CSRF/Host checks, report exports, public destination filtering and visitor isolation.</p>
       </section>
 
@@ -61,8 +62,9 @@
     <section class="card">
       <h2>Try the working scanner</h2>
       <p class="muted">Choose a bounded assessment and review both the evidence and the explanation of what it does—and does not—mean.</p>
-      <a class="button-link" href="{{ url_for('index') }}">Open SentinelAI</a>
+      <div class="cta-row"><a class="button-link" href="{{ url_for('index') }}">Open SentinelAI</a><a href="{{ url_for('beta_page') }}">Read the beta guide</a></div>
     </section>
+    <footer class="site-footer"><a href="{{ url_for('beta_page') }}">Beta, privacy and feedback</a><span>Built and documented by Jesse Dogara</span></footer>
   </main>
 </body>
 </html>

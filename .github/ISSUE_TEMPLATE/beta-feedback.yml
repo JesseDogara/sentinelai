@@ -1,0 +1,39 @@
+name: SentinelAI beta feedback
+description: Share product feedback without posting confidential targets or scan data.
+title: "[Beta feedback] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing SentinelAI. Do not include credentials, private targets, access tokens, response bodies or confidential scan results.
+  - type: dropdown
+    id: assessment
+    attributes:
+      label: Assessment type
+      options:
+        - Website
+        - API
+        - Domain
+        - IP Address
+        - Portfolio or beta page
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What happened?
+      description: Describe what you expected and what you observed without sharing sensitive data.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+      placeholder: "Example: Safari on iPhone"
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I have not included private targets, credentials or confidential scan results.
+          required: true

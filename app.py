@@ -24,7 +24,7 @@ configured_secret = os.environ.get("SENTINELAI_SECRET_KEY")
 if PUBLIC_MODE and not configured_secret:
     raise RuntimeError("SENTINELAI_SECRET_KEY is required in public mode.")
 app.secret_key = configured_secret or secrets.token_hex(32)
-SCANNER_VERSION = "0.5.0"
+SCANNER_VERSION = "0.6.0"
 trusted_hosts = ["localhost", "127.0.0.1", "[::1]"]
 if PUBLIC_MODE:
     trusted_hosts.append(".onrender.com")
@@ -42,6 +42,7 @@ VISIBLE_SCAN_LABELS = {key: value for key, value in SCAN_LABELS.items()
 app.jinja_env.globals["scan_labels"] = VISIBLE_SCAN_LABELS
 app.jinja_env.globals["scan_types"] = {key: SCAN_LABELS[key] for key in SCANNERS}
 app.jinja_env.globals["public_mode"] = PUBLIC_MODE
+app.jinja_env.globals["scanner_version"] = SCANNER_VERSION
 
 DB_PATH = Path(os.environ.get("SENTINELAI_DB_PATH", Path(__file__).parent / "sentinelai.db"))
 _RATE_LOCK = Lock()
@@ -227,7 +228,8 @@ def dashboard(selected_type="website", target="", filter_type="", query=""):
     return render_template("index.html", history=get_history(scan_type=filter_type, query=query,
                                                             owner_token=owner_token),
                            selected_type=selected_type, target=target, filter_type=filter_type,
-                           query=query, counts=counts, total_scans=sum(counts.values()))
+                           query=query, counts=counts, total_scans=sum(counts.values()),
+                           public_mode=PUBLIC_MODE)
 
 
 @app.route("/", methods=["GET"])
@@ -247,6 +249,11 @@ def healthz():
 @app.get("/project")
 def project_page():
     return render_template("project.html", scanner_version=SCANNER_VERSION)
+
+
+@app.get("/beta")
+def beta_page():
+    return render_template("beta.html", scanner_version=SCANNER_VERSION)
 
 
 @app.route("/scan", methods=["POST"])
