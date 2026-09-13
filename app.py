@@ -114,6 +114,11 @@ def protect_submissions():
             abort(400, description="The form expired or could not be verified. Reload the page and try again.")
         origin = request.headers.get("Origin")
         if origin and not origin_matches_request(origin):
+            app.logger.warning(
+                "Rejected POST origin=%r scheme=%r host=%r forwarded_host=%r forwarded_proto=%r",
+                origin, request.scheme, request.host,
+                request.headers.get("X-Forwarded-Host"), request.headers.get("X-Forwarded-Proto"),
+            )
             abort(403, description="Cross-origin submissions are not allowed.")
         if request.path == "/scan" and not scan_rate_allowed(request.remote_addr or "unknown"):
             abort(429, description="Scan limit reached. Try again in a few minutes.")
